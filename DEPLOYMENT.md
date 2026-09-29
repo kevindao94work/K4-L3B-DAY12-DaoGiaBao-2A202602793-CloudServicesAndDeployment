@@ -1,101 +1,54 @@
-# Thông Tin Deploy — Checkpoint 5
+# Deployment Report — Checkpoint 5
 
-> Điền file này sau khi deploy xong. `pytest tests/test_cp5.py` đọc file này
-> để tìm địa chỉ service của bạn và gọi thử.
->
-> **Chỉ ghi TÊN biến môi trường, tuyệt đối không dán giá trị API key vào đây.**
-> Repo này công khai — dán khóa vào là mất khóa.
+## Thông tin học viên và repository
 
-## Thông Tin Học Viên
+| Field | Value |
+|-------|-------|
+| Name | Dao Gia Bao |
+| Mã học viên | 2A202602793 |
+| Repository | https://github.com/kevindao94work/K4-L3B-DAY12-DaoGiaBao-2A202602793-CloudServicesAndDeployment |
 
-| Mục | Nội dung |
-|-----|----------|
-| Họ và tên | (điền họ tên) |
-| Mã học viên | (điền mã học viên) |
-| Repo | (điền link repo K4-L3B-DAY12-HoVaTen-MSSV-CloudServicesAndDeployment) |
+## Service status
 
-## Service
+| Field | Value |
+|-------|-------|
+| Public URL | Not deployed; using the documented local fallback |
+| Platform | Docker Compose local fallback; no Railway or Render service was created |
+| Verification date | 2026-09-29 |
 
-| Mục | Nội dung |
-|-----|----------|
-| Public URL | https://TODO-thay-bang-url-that.up.railway.app |
-| Platform | Railway / Render / Cloud Run — (điền platform bạn dùng) |
-| Ngày deploy | (điền ngày) |
+The local stack is available at `http://localhost:8000` while Docker Compose is
+running. `/health` returned `{"status":"ok","service":"day12-agent","version":"1.0.0"}` and
+`/ready` returned `{"status":"ready","redis":true}`. `docker compose ps` showed
+the `agent` and `redis` services healthy. No cloud deployment was attempted:
+Railway CLI and deployment credentials are not available in this environment.
 
-## Biến Môi Trường Đã Set Trên Cloud
+## Environment variables
 
-Ghi tên biến và **nguồn giá trị**, không ghi giá trị:
+No cloud environment is configured. For the local Compose stack:
 
-| Biến | Đã set | Ghi chú |
-|------|--------|---------|
-| `PORT` | ✅ | platform tự gán |
-| `AGENT_API_KEY` | ✅ | đặt trong dashboard, không nằm trong repo |
-| `REDIS_URL` | ✅ | (điền: Redis add-on của platform / Upstash / ...) |
-| `RATE_LIMIT_PER_MINUTE` | ✅ | 10 |
-| `MONTHLY_BUDGET_USD` | ✅ | 10.0 |
-| `LOG_LEVEL` | ✅ | INFO |
+| Variable | Local configuration |
+|----------|---------------------|
+| `PORT` | Set to `8000` by Compose |
+| `AGENT_API_KEY` | Read from the ignored local `.env` file |
+| `REDIS_URL` | Compose service address `redis://redis:6379/0` |
+| `RATE_LIMIT_PER_MINUTE` | Application default `10` |
+| `MONTHLY_BUDGET_USD` | Application default `10.0` |
+| `LOG_LEVEL` | Application default `INFO` |
 
-## Lệnh Kiểm Tra
-
-Thay `<URL>` bằng Public URL ở trên:
+## Local verification
 
 ```bash
-# 1. Liveness — mong đợi 200 {"status":"ok"}
-curl -i <URL>/health
-
-# 2. Readiness — mong đợi 200 {"status":"ready"} (đã nối được Redis)
-curl -i <URL>/ready
-
-# 3. Không có API key — mong đợi 401
-curl -i -X POST <URL>/ask \
+curl -i http://localhost:8000/health
+curl -i http://localhost:8000/ready
+curl -i -X POST http://localhost:8000/ask \
   -H "Content-Type: application/json" \
   -d '{"question":"Hello"}'
-
-# 4. Có API key — mong đợi 200 kèm câu trả lời
-curl -i -X POST <URL>/ask \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: $AGENT_API_KEY" \
-  -H "X-User-Id: sv-test" \
-  -d '{"question":"Deploy là gì?"}'
-
-# 5. Rate limit — gọi 15 lần, những lần cuối phải trả 429
-for i in $(seq 1 15); do
-  curl -s -o /dev/null -w "%{http_code} " -X POST <URL>/ask \
-    -H "Content-Type: application/json" \
-    -H "X-API-Key: $AGENT_API_KEY" \
-    -H "X-User-Id: sv-test" \
-    -d '{"question":"test"}'
-done; echo
 ```
 
-## Kết Quả Chạy Thật
+The health endpoint returned HTTP 200, readiness returned HTTP 200 with Redis
+available, and an unauthenticated `/ask` request is expected to return HTTP 401.
+The actual browser capture of `/health` is [screenshots/health.png](screenshots/health.png).
 
-Dán output của các lệnh trên vào đây:
-
-```
-(điền output)
-```
-
-## Ảnh Chụp Màn Hình
-
-Đặt ảnh trong thư mục `screenshots/`:
-
-- `screenshots/dashboard.png` — trang quản lý service trên platform
-- `screenshots/health.png` — kết quả gọi `/health` từ trình duyệt hoặc curl
-
----
-
-## Nếu Dùng Phương Án Dự Phòng
-
-Không đăng ký được tài khoản cloud? Vẫn nộp được bài, nhưng CP5 tối đa 60% điểm:
-
-1. Đặt `LOCAL_FALLBACK=true` trong `.env`
-2. Chạy `docker compose up -d` rồi kiểm tra `docker compose ps`
-3. Chụp màn hình vào `screenshots/`
-4. Chạy `pytest tests/test_cp5.py -v` — bộ test sẽ tự chuyển sang kiểm tra
-   `http://localhost:8000`
-5. Ghi rõ lý do không deploy được vào phần dưới đây:
-
-```
-(điền lý do nếu dùng phương án dự phòng, ngược lại xóa mục này)
-```
+`LOCAL_FALLBACK=true` is set in the ignored local `.env` file for the CP5
+fallback checks. There is no cloud URL or platform dashboard screenshot because
+no cloud service was deployed.
